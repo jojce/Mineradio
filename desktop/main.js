@@ -31,12 +31,22 @@ const MIN_WINDOWED_WIDTH = 960;
 const MIN_WINDOWED_HEIGHT = 540;
 const APP_NAME = 'Mineradio';
 const APP_USER_MODEL_ID = 'com.mineradio.desktop';
-const APP_ICON_ICO = path.join(__dirname, '..', 'build', 'icon.ico');
+const APP_ICON_ICO = (() => {
+  if (process.platform === 'darwin') {
+    const icns = path.join(__dirname, '..', 'build', 'icon.icns');
+    if (fs.existsSync(icns)) return icns;
+    const png = path.join(__dirname, '..', 'build', 'icon.png');
+    if (fs.existsSync(png)) return png;
+    return icns; // fallback, Electron will degrade
+  }
+  return path.join(__dirname, '..', 'build', 'icon.ico');
+})();
 const NETEASE_LOGIN_PARTITION = 'persist:mineradio-netease-login';
 const NETEASE_LOGIN_URL = 'https://music.163.com/#/login';
 const QQ_LOGIN_PARTITION = 'persist:mineradio-qqmusic-login';
 const QQ_LOGIN_URL = 'https://y.qq.com/n/ryqq/profile';
 
+const IS_MAC_MAIN = process.platform === 'darwin';
 const CHROMIUM_PERFORMANCE_SWITCHES = [
   ['autoplay-policy', 'no-user-gesture-required'],
   ['ignore-gpu-blocklist'],
@@ -48,7 +58,9 @@ const CHROMIUM_PERFORMANCE_SWITCHES = [
   ['disable-renderer-backgrounding'],
   ['disable-backgrounding-occluded-windows'],
   ['force_high_performance_gpu'],
-  ['use-angle', 'd3d11'],
+  ...(IS_MAC_MAIN
+    ? [['enable-features', 'Metal']]
+    : [['use-angle', 'd3d11']]),
 ];
 for (const [name, value] of CHROMIUM_PERFORMANCE_SWITCHES) {
   if (value == null) app.commandLine.appendSwitch(name);
